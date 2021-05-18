@@ -2,8 +2,11 @@ import React, { Component } from 'react';
 import { Signin } from './Signin';
 import { Header } from './Header';
 import { ThemeProvider, theme, CSSReset, ToastProvider } from '@blockstack/ui';
+import { appConfig } from '../assets/constants';
 import { TodoList } from './TodoList';
-import { userSession } from '../auth';
+import { UserSession, Connect } from '@stacks/auth';
+
+const userSession = new UserSession({ appConfig });
 
 export default class App extends Component {
   state = {
@@ -17,18 +20,35 @@ export default class App extends Component {
   }
 
   render() {
+    const { userData } = this.state;
+    const authOptions = {
+      appDetails: {
+        name: "To-do's",
+        icon: window.location.origin + '/logo.svg',
+      },
+      userSession,
+      finished: ({ userSession }) => {
+        this.setState({ userData: userSession.loadUserData() });
+      },
+    };
     return (
-      <ThemeProvider theme={theme}>
-        <ToastProvider>
-          <div className="site-wrapper">
-            <div className="site-wrapper-inner">
-              <Header />
-              {!userSession.isUserSignedIn() ? <Signin /> : <TodoList />}
+      <Connect authOptions={authOptions}>
+        <ThemeProvider theme={theme}>
+          <ToastProvider>
+            <div className="site-wrapper">
+              <div className="site-wrapper-inner">
+                <Header />
+                {!userData && !document.location.pathname.includes('todos/') ? (
+                  <Signin />
+                ) : (
+                  <TodoList />
+                )}
+              </div>
             </div>
-          </div>
-        </ToastProvider>
-        <CSSReset />
-      </ThemeProvider>
+          </ToastProvider>
+          <CSSReset />
+        </ThemeProvider>
+      </Connect>
     );
   }
 
